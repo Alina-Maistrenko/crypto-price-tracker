@@ -22,4 +22,21 @@
   - Writing efficient SQL queries (e.g., window functions)
   - Documentation and project structuring
 
-    
+ ## 🚀 Getting Started
+
+1. Clone the repo  
+2. Install dependencies via `pip install -r requirements.txt`  
+3. Run the Jupyter notebook to collect data (`notebook/crypto_data_collection.ipynb`)  
+4. Explore the data in the SQLite database (`data/crypto_data.sqlite`) using SQL or Tableau
+
+## 📈 What You Can Do with This Project
+
+- Analyze price trends of major cryptocurrencies  
+- Test investment scenarios like "What if I invested $100 a year ago?"  
+- Create interactive dashboards with Tableau
+
+
+  *Created by Alina Maistrenko*
+   
+   
+
