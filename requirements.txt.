@@ -1,0 +1,5 @@
+pandas — for working with tables and data processing.
+
+pycoingecko — for collecting data from the CoinGecko API.
+
+sqlalchemy — for working with PostgreSQL or SQLite databases through Python.
