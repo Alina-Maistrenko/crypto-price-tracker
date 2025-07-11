@@ -1,0 +1,544 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "provenance": [],
+      "authorship_tag": "ABX9TyPz51UDzhPExbCTQR8qxP2P",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/Alina-Maistrenko/crypto-price-tracker/blob/main/crypto_project.ipynb/data/notebook\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "execution_count": 91,
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "46stVzqrEkWP",
+        "outputId": "15ad181a-2302-4e45-c7e6-ad314a1e787a"
+      },
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Requirement already satisfied: pycoingecko in /usr/local/lib/python3.11/dist-packages (3.2.0)\n",
+            "Requirement already satisfied: pandas in /usr/local/lib/python3.11/dist-packages (2.2.2)\n",
+            "Requirement already satisfied: requests in /usr/local/lib/python3.11/dist-packages (from pycoingecko) (2.32.3)\n",
+            "Requirement already satisfied: numpy>=1.23.2 in /usr/local/lib/python3.11/dist-packages (from pandas) (2.0.2)\n",
+            "Requirement already satisfied: python-dateutil>=2.8.2 in /usr/local/lib/python3.11/dist-packages (from pandas) (2.9.0.post0)\n",
+            "Requirement already satisfied: pytz>=2020.1 in /usr/local/lib/python3.11/dist-packages (from pandas) (2025.2)\n",
+            "Requirement already satisfied: tzdata>=2022.7 in /usr/local/lib/python3.11/dist-packages (from pandas) (2025.2)\n",
+            "Requirement already satisfied: six>=1.5 in /usr/local/lib/python3.11/dist-packages (from python-dateutil>=2.8.2->pandas) (1.17.0)\n",
+            "Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.11/dist-packages (from requests->pycoingecko) (3.4.2)\n",
+            "Requirement already satisfied: idna<4,>=2.5 in /usr/local/lib/python3.11/dist-packages (from requests->pycoingecko) (3.10)\n",
+            "Requirement already satisfied: urllib3<3,>=1.21.1 in /usr/local/lib/python3.11/dist-packages (from requests->pycoingecko) (2.4.0)\n",
+            "Requirement already satisfied: certifi>=2017.4.17 in /usr/local/lib/python3.11/dist-packages (from requests->pycoingecko) (2025.6.15)\n"
+          ]
+        }
+      ],
+      "source": [
+        "pip install pycoingecko pandas"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from datetime import datetime, timedelta\n",
+        "import pandas as pd\n",
+        "from pycoingecko import CoinGeckoAPI\n",
+        "import time       # Import the time module for delays"
+      ],
+      "metadata": {
+        "id": "JwbRqEGhFSEs"
+      },
+      "execution_count": 92,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 1. API Initialization\n",
+        "First, import the CoinGecko API client and create an instance to start fetching cryptocurrency data."
+      ],
+      "metadata": {
+        "id": "S7F1ulZjFXOI"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "cg = CoinGeckoAPI()"
+      ],
+      "metadata": {
+        "id": "_kkCF5bHFTH6"
+      },
+      "execution_count": 93,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 2. Coins to Collect\n",
+        "We will collect price data for the following cryptocurrencies:"
+      ],
+      "metadata": {
+        "id": "INjcs2KWFuzh"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "coins = {\n",
+        "    'bitcoin': 'BTC',\n",
+        "    'ethereum': 'ETH',\n",
+        "    'binancecoin': 'BNB',\n",
+        "    'cardano': 'ADA',\n",
+        "    'solana': 'SOL'\n",
+        "}"
+      ],
+      "metadata": {
+        "id": "QxqUzRmMFwN5"
+      },
+      "execution_count": 94,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 3. Function to Generate Date Ranges in 365-Day Intervals\n",
+        "This function yields start and end dates in chunks of 365 days between the given start and end dates."
+      ],
+      "metadata": {
+        "id": "8oJFyoNrF5Ej"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "def daterange(start_date, end_date, delta_days=365):\n",
+        "    current_start = start_date # Corrected variable name from start_start\n",
+        "    while current_start < end_date:\n",
+        "        current_end = min(current_start + timedelta(days=delta_days), end_date)\n",
+        "        yield current_start, current_end\n",
+        "        current_start = current_end + timedelta(days=1)"
+      ],
+      "metadata": {
+        "id": "Mdut40f9HtDh"
+      },
+      "execution_count": 95,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 4. Define the Data Collection Period"
+      ],
+      "metadata": {
+        "id": "XB5l1xYMIom3"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "end_date = datetime.now()  # This will be the current date and time\n",
+        "start_date = end_date - timedelta(days=365)"
+      ],
+      "metadata": {
+        "id": "1rVT1i6KIrGw"
+      },
+      "execution_count": 96,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 5. Initialize an Empty DataFrame\n",
+        "Create an empty pandas DataFrame to store combined price data for all cryptocurrencies."
+      ],
+      "metadata": {
+        "id": "wQRVyXQmHb9O"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "combined_data = pd.DataFrame()"
+      ],
+      "metadata": {
+        "id": "J3RuSEQkHiQx"
+      },
+      "execution_count": 97,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 6. Main Data Collection Loop\n",
+        "This loop iterates over each cryptocurrency and fetches historical price data in defined date ranges, then appends it to a combined DataFrame."
+      ],
+      "metadata": {
+        "id": "5_2KBeOAFrxc"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "for coin_id, symbol in coins.items():\n",
+        "    print(f\"Processing {symbol}\")\n",
+        "    for start, end in daterange(start_date, end_date):\n",
+        "        print(f\"Attempting to load data for {symbol} from {start.date()} to {end.date()}\")\n",
+        "        from_ts = int(start.timestamp())\n",
+        "        to_ts = int(end.timestamp())\n",
+        "\n",
+        "        retries = 0\n",
+        "        success = False\n",
+        "        while retries < MAX_RETRIES and not success:\n",
+        "            try:\n",
+        "                data = cg.get_coin_market_chart_range_by_id(\n",
+        "                    id=coin_id,\n",
+        "                    vs_currency='usd',\n",
+        "                    from_timestamp=from_ts,\n",
+        "                    to_timestamp=to_ts\n",
+        "                )\n",
+        "                # Check if 'prices' data is available and not empty\n",
+        "                if 'prices' in data and len(data['prices']) > 0:\n",
+        "                    prices = pd.DataFrame(data['prices'], columns=['timestamp', 'price'])\n",
+        "                    prices['date'] = pd.to_datetime(prices['timestamp'], unit='ms')\n",
+        "                    prices['symbol'] = symbol\n",
+        "                    prices = prices[['date', 'symbol', 'price']]\n",
+        "                    combined_data = pd.concat([combined_data, prices], ignore_index=True)\n",
+        "                    print(f\"Successfully loaded {len(prices)} data points for {symbol} from {start.date()} to {end.date()}\")\n",
+        "                    success = True # Mark as successful to exit retry loop\n",
+        "                else:\n",
+        "                    print(f\"WARNING: No price data returned for {symbol} from {start.date()} to {end.date()}. Retrying...\")\n",
+        "                    retries += 1\n",
+        "                    time.sleep(INITIAL_RETRY_DELAY * (2 ** (retries - 1))) # Exponential backoff\n",
+        "            except Exception as e:\n",
+        "                print(f\"ERROR: Could not load {symbol} data from {start.date()} to {end.date()} (Attempt {retries + 1}/{MAX_RETRIES}): {e}\")\n",
+        "                retries += 1\n",
+        "                if retries < MAX_RETRIES:\n",
+        "                    time.sleep(INITIAL_RETRY_DELAY * (2 ** (retries - 1))) # Exponential backoff\n",
+        "                else:\n",
+        "                    print(f\"Max retries reached for {symbol} from {start.date()} to {end.date()}. Skipping this range.\")\n",
+        ""
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "CntUpOmpI2DA",
+        "outputId": "7e7bef97-0392-452d-f538-89747b6eefd0"
+      },
+      "execution_count": 98,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Processing BTC\n",
+            "Attempting to load data for BTC from 2024-07-11 to 2025-07-11\n",
+            "Successfully loaded 365 data points for BTC from 2024-07-11 to 2025-07-11\n",
+            "Processing ETH\n",
+            "Attempting to load data for ETH from 2024-07-11 to 2025-07-11\n",
+            "Successfully loaded 365 data points for ETH from 2024-07-11 to 2025-07-11\n",
+            "Processing BNB\n",
+            "Attempting to load data for BNB from 2024-07-11 to 2025-07-11\n",
+            "Successfully loaded 365 data points for BNB from 2024-07-11 to 2025-07-11\n",
+            "Processing ADA\n",
+            "Attempting to load data for ADA from 2024-07-11 to 2025-07-11\n",
+            "Successfully loaded 365 data points for ADA from 2024-07-11 to 2025-07-11\n",
+            "Processing SOL\n",
+            "Attempting to load data for SOL from 2024-07-11 to 2025-07-11\n",
+            "Successfully loaded 365 data points for SOL from 2024-07-11 to 2025-07-11\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 7. Remove Duplicates\n",
+        "Remove duplicate entries based on date and symbol columns to ensure data integrity."
+      ],
+      "metadata": {
+        "id": "PFuHbed_I81G"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "combined_data = combined_data.drop_duplicates(subset=['date', 'symbol']).reset_index(drop=True)\n"
+      ],
+      "metadata": {
+        "id": "y8YBAyqhI9qO"
+      },
+      "execution_count": 99,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "Notify that data collection has finished successfully\n"
+      ],
+      "metadata": {
+        "id": "x73W6v15H0uY"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(\"Data collection complete!\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "BZIRteh2H4FN",
+        "outputId": "39f7643d-76df-42a5-fad4-5a40823d0ea9"
+      },
+      "execution_count": 100,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Data collection complete!\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 8. Connect to (or create) SQLite database file in the data folder"
+      ],
+      "metadata": {
+        "id": "Mdyj6owmM8VM"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "import sqlite3"
+      ],
+      "metadata": {
+        "id": "0MuWE1L5SYXE"
+      },
+      "execution_count": 101,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "conn = sqlite3.connect('crypto_data.sqlite')"
+      ],
+      "metadata": {
+        "id": "v88aEc7dSjIW"
+      },
+      "execution_count": 102,
+      "outputs": []
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 9. Save the combined DataFrame to a table named 'crypto_prices'"
+      ],
+      "metadata": {
+        "id": "H7ATRnKeIMng"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "combined_data.to_sql('crypto_prices', conn, if_exists='replace', index=False)\n"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "uugUOqZ3SmNj",
+        "outputId": "12bd429b-afc7-4d20-d9a7-30778d54f4c9"
+      },
+      "execution_count": 103,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "1825"
+            ]
+          },
+          "metadata": {},
+          "execution_count": 103
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 10. Close the connection"
+      ],
+      "metadata": {
+        "id": "DjAYCzIeIWFg"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "conn.close()\n",
+        "print(\"Database saved to data/crypto_data.sqlite\")"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "urEJJjy-IZwa",
+        "outputId": "cf08aa31-dc23-4ef6-dc83-a8b94e0cd8bd"
+      },
+      "execution_count": 104,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "Database saved to data/crypto_data.sqlite\n"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "markdown",
+      "source": [
+        "# 11. Download the Database from Colab to Your Computer\n"
+      ],
+      "metadata": {
+        "id": "4a94wAy1Sq72"
+      }
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "from google.colab import files\n",
+        "files.download('crypto_data.sqlite')"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 17
+        },
+        "id": "5zWUwuJ9SufK",
+        "outputId": "e05ab0b1-ca5f-4031-d9f3-8f7f489b36dc"
+      },
+      "execution_count": 105,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ],
+            "application/javascript": [
+              "\n",
+              "    async function download(id, filename, size) {\n",
+              "      if (!google.colab.kernel.accessAllowed) {\n",
+              "        return;\n",
+              "      }\n",
+              "      const div = document.createElement('div');\n",
+              "      const label = document.createElement('label');\n",
+              "      label.textContent = `Downloading \"${filename}\": `;\n",
+              "      div.appendChild(label);\n",
+              "      const progress = document.createElement('progress');\n",
+              "      progress.max = size;\n",
+              "      div.appendChild(progress);\n",
+              "      document.body.appendChild(div);\n",
+              "\n",
+              "      const buffers = [];\n",
+              "      let downloaded = 0;\n",
+              "\n",
+              "      const channel = await google.colab.kernel.comms.open(id);\n",
+              "      // Send a message to notify the kernel that we're ready.\n",
+              "      channel.send({})\n",
+              "\n",
+              "      for await (const message of channel.messages) {\n",
+              "        // Send a message to notify the kernel that we're ready.\n",
+              "        channel.send({})\n",
+              "        if (message.buffers) {\n",
+              "          for (const buffer of message.buffers) {\n",
+              "            buffers.push(buffer);\n",
+              "            downloaded += buffer.byteLength;\n",
+              "            progress.value = downloaded;\n",
+              "          }\n",
+              "        }\n",
+              "      }\n",
+              "      const blob = new Blob(buffers, {type: 'application/binary'});\n",
+              "      const a = document.createElement('a');\n",
+              "      a.href = window.URL.createObjectURL(blob);\n",
+              "      a.download = filename;\n",
+              "      div.appendChild(a);\n",
+              "      a.click();\n",
+              "      div.remove();\n",
+              "    }\n",
+              "  "
+            ]
+          },
+          "metadata": {}
+        },
+        {
+          "output_type": "display_data",
+          "data": {
+            "text/plain": [
+              "<IPython.core.display.Javascript object>"
+            ],
+            "application/javascript": [
+              "download(\"download_c67ec826-21e4-4d61-8023-b76dd12e3311\", \"crypto_data.sqlite\", 81920)"
+            ]
+          },
+          "metadata": {}
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "source": [
+        "print(combined_data['date'].min(), combined_data['date'].max())"
+      ],
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "m53I4opKwoqv",
+        "outputId": "bf17fc56-982d-41e3-950e-8ac70853be2a"
+      },
+      "execution_count": 106,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "name": "stdout",
+          "text": [
+            "2024-07-12 00:00:00 2025-07-11 00:00:00\n"
+          ]
+        }
+      ]
+    }
+  ]
+}
